@@ -1,0 +1,9 @@
+com\arep\microspringboot\GetMapping.class
+com\arep\microspringboot\RestController.class
+com\arep\microspringboot\examples\Foo.class
+com\arep\microspringboot\examples\InvokeMain.class
+com\arep\microspringboot\MicroSpringBoot.class
+com\arep\microspringboot\examples\Test.class
+com\arep\microspringboot\examples\ReflexionNavigator.class
+com\arep\microspringboot\HelloController.class
+com\arep\microspringboot\examples\RunTests.class
