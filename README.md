@@ -71,18 +71,6 @@ Tambien puedes ejecutarlo como jar:
 java -jar target/microspringboot-1.0-SNAPSHOT.jar
 ```
 
-Tambien puedes indicar un puerto distinto:
-
-```bash
-java -cp target/classes com.arep.microspringboot.MicroSpringBoot 35000
-```
-
-O cargar solo una clase controladora especifica:
-
-```bash
-java -cp target/classes com.arep.microspringboot.MicroSpringBoot com.arep.microspringboot.HelloController
-```
-
 ## Endpoints disponibles
 
 Dinamicos:
@@ -157,32 +145,52 @@ Implementado:
 - Entrega de paginas HTML e imagenes PNG.
 - Atencion de multiples solicitudes no concurrentes.
 - Aplicacion de ejemplo derivada de POJOs.
-
-Pendiente para la entrega completa:
-
-- Desplegar la aplicacion en AWS y adjuntar evidencia de ejecucion.
-- Agregar al repositorio las evidencias finales de despliegue solicitadas por el laboratorio.
-
-## Siguiente iteracion recomendada
-
-1. Desplegar el servidor en AWS.
-2. Guardar capturas de compilacion, ejecucion y pruebas HTTP.
-3. Subir el codigo final a GitHub.
-4. Documentar la URL, IP publica o evidencia de acceso remoto.
+- Empaquetado en jar ejecutable para despliegue.
 
 ## Despliegue en AWS
 
-Deje una guia especifica para EC2 en [AWS-EC2-DEPLOY.md](AWS-EC2-DEPLOY.md).
+Flujo usado para el despliegue en EC2:
 
-Resumen rapido:
-
-1. Ejecutar `mvn clean package`.
-2. Subir `target/microspringboot-1.0-SNAPSHOT.jar` a una instancia EC2.
+1. Ejecutar `mvn clean package` para generar `target/microspringboot-1.0-SNAPSHOT.jar`.
+2. Subir el jar a la instancia EC2.
 3. Instalar Java 17 en la instancia.
 4. Abrir el puerto `8080` en el Security Group.
 5. Ejecutar `java -jar microspringboot-1.0-SNAPSHOT.jar`.
-6. Probar desde navegador o `curl` contra la IP publica.
+6. Validar el acceso desde navegador o con `curl` sobre la IP publica.
 
-## Autor
+## Evidencias
 
-Proyecto academico para el curso de AREP.
+Las siguientes capturas documentan el proceso de compilacion, despliegue y verificacion de la aplicacion:
+
+### Evidencia 1
+
+![Evidencia 1](images/0.png)
+
+### Evidencia 2
+
+![Evidencia 2](images/1.png)
+
+### Evidencia 3
+
+![Evidencia 3](images/2.png)
+
+### Evidencia 4
+
+![Evidencia 4](images/3.png)
+
+### Evidencia 5
+
+![Evidencia 5](images/4.png)
+
+### Evidencia 6
+
+![Evidencia 6](images/5.png)
+
+## Entrega
+
+Este repositorio queda listo para subir a GitHub con:
+
+- Codigo fuente del micro-framework y del servidor HTTP.
+- Recursos estaticos de prueba.
+- Pruebas automatizadas con JUnit.
+- README con instrucciones de ejecucion y evidencias del despliegue.
