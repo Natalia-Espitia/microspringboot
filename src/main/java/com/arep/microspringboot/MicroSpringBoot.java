@@ -24,12 +24,16 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 public class MicroSpringBoot {
 
     static final int DEFAULT_PORT = 8080;
+    private static final int THREAD_POOL_SIZE = 10;
     private static final String STATIC_ROOT = "static";
     static final Map<String, RouteDefinition> controllerMethods = new LinkedHashMap<>();
 
@@ -151,13 +155,45 @@ public class MicroSpringBoot {
     }
 
     private static void startServer(int port) throws IOException {
-        try (ServerSocket serverSocket = new ServerSocket(port)) {
-            System.out.println("MicroSpringBoot listening on http://localhost:" + port);
-            while (true) {
-                try (Socket clientSocket = serverSocket.accept()) {
-                    handleClient(clientSocket);
+        ServerSocket serverSocket = new ServerSocket(port);
+        ExecutorService threadPool = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("Shutting down server...");
+            try {
+                serverSocket.close();
+            } catch (IOException e) {
+                // Ignore
+            }
+            threadPool.shutdown();
+            try {
+                if (!threadPool.awaitTermination(10, TimeUnit.SECONDS)) {
+                    threadPool.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                threadPool.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+            System.out.println("Server stopped");
+        }));
+
+        System.out.println("Server started on port " + port);
+        while (!serverSocket.isClosed()) {
+            try {
+                Socket clientSocket = serverSocket.accept();
+                threadPool.submit(() -> {
+                    try {
+                        handleClient(clientSocket);
+                    } catch (IOException e) {
+                        System.err.println("Error handling client: " + e.getMessage());
+                    }
+                });
+            } catch (IOException e) {
+                if (serverSocket.isClosed()) {
+                    System.out.println("Server socket closed, stopping accept loop");
                 }
             }
+
         }
     }
 
@@ -368,6 +404,7 @@ public class MicroSpringBoot {
     }
 
     static final class Configuration {
+
         private final String basePackage;
         private final String controllerClassName;
         private final int port;
@@ -380,6 +417,7 @@ public class MicroSpringBoot {
     }
 
     static final class RouteDefinition {
+
         private final Object controllerInstance;
         private final Method method;
         private final List<ParameterDefinition> parameters;
@@ -392,6 +430,7 @@ public class MicroSpringBoot {
     }
 
     static final class ParameterDefinition {
+
         private final String name;
         private final String defaultValue;
 
@@ -402,6 +441,7 @@ public class MicroSpringBoot {
     }
 
     static final class HttpResponse {
+
         private final int statusCode;
         private final String statusText;
         private final String contentType;
