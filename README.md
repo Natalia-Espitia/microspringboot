@@ -22,6 +22,50 @@ El proyecto ya puede ejecutarse desde navegador o por peticiones HTTP directas e
 - Java 17
 - Maven 3.9 o superior
 
+## Arquitectura
+
+El proyecto implementa un micro-framework IoC sobre un servidor HTTP propio en Java puro (sin Spring). La arquitectura se organiza en cuatro capas:
+
+```
+┌─────────────────────────────────────────────┐
+│            Cliente HTTP (browser/curl)      │
+└────────────────────┬────────────────────────┘
+                     │ HTTP GET
+┌────────────────────▼────────────────────────┐
+│         Servidor HTTP (MicroSpringBoot)     │
+│  ServerSocket + ExecutorService (10 hilos)  │
+└────────────────────┬────────────────────────┘
+                     │ despacho
+        ┌────────────┴────────────┐
+        │                        │
+┌───────▼────────┐   ┌───────────▼──────────┐
+│  Controladores │   │  Recursos estáticos  │
+│  (reflexión)   │   │  (classpath /static) │
+│ HelloController│   │  index.html, *.png   │
+│GreetingControl.│   └──────────────────────┘
+└───────┬────────┘
+        │ anotaciones
+┌───────▼────────────────────────────────────┐
+│  @RestController  @GetMapping  @RequestParam│
+└─────────────────────────────────────────────┘
+```
+
+El servidor acepta solicitudes concurrentemente usando un pool de hilos fijo. Al recibir una petición, busca primero una ruta dinámica registrada; si no la encuentra, intenta servir el recurso estático del classpath. El apagado es elegante: el shutdown hook cierra el `ServerSocket` y espera hasta 10 segundos a que los hilos activos terminen antes de forzar la parada.
+
+## Diseño de clases
+
+| Clase / Anotación | Responsabilidad |
+|---|---|
+| `MicroSpringBoot` | Punto de entrada. Escanea el paquete base por reflexión, registra rutas y levanta el servidor HTTP con pool de hilos. |
+| `@RestController` | Marca una clase POJO como controlador HTTP descubrible por reflexión. |
+| `@GetMapping` | Asocia un método a una ruta HTTP GET. |
+| `@RequestParam` | Vincula un parámetro del método a un query-param de la URL, con valor por defecto opcional. |
+| `HelloController` | Controlador de ejemplo: expone `/`, `/hello` y `/pi`. |
+| `GreetingController` | Controlador de ejemplo con `@RequestParam`: expone `/greeting?name=`. |
+| `RouteDefinition` (inner) | Agrupa la instancia del controlador, el método y los descriptores de sus parámetros para el despacho. |
+| `HttpResponse` (inner) | Encapsula código de estado, content-type y cuerpo de la respuesta. |
+| `Configuration` (inner) | Almacena puerto, paquete base y clase de controlador leídos de los argumentos de línea de comandos. |
+
 ## Estructura del proyecto
 
 ```text
@@ -69,6 +113,48 @@ Tambien puedes ejecutarlo como jar:
 
 ```bash
 java -jar target/microspringboot-1.0-SNAPSHOT.jar
+```
+
+## Docker
+
+### Construir la imagen
+
+```bash
+docker build -t microspringboot:latest .
+```
+
+### Ejecutar un contenedor localmente
+
+```bash
+docker run -d -p 8080:8080 --name microspringboot microspringboot:latest
+```
+
+Verificar que corre:
+
+```bash
+docker ps
+curl http://localhost:8080/hello
+```
+
+### Subir la imagen a Docker Hub
+
+```bash
+docker tag microspringboot:latest <tu-usuario>/microspringboot:latest
+docker login
+docker push <tu-usuario>/microspringboot:latest
+```
+
+### Descargar y ejecutar desde Docker Hub (en cualquier máquina)
+
+```bash
+docker run -d -p 8080:8080 --name microspringboot <tu-usuario>/microspringboot:latest
+```
+
+### Docker Compose
+
+```bash
+docker-compose up -d
+docker-compose down
 ```
 
 ## Endpoints disponibles
@@ -143,7 +229,8 @@ Implementado:
 - Soporte para `@GetMapping`.
 - Soporte para `@RequestParam`.
 - Entrega de paginas HTML e imagenes PNG.
-- Atencion de multiples solicitudes no concurrentes.
+- Atencion de multiples solicitudes de forma concurrente (pool de 10 hilos).
+- Apagado elegante con shutdown hook.
 - Aplicacion de ejemplo derivada de POJOs.
 - Empaquetado en jar ejecutable para despliegue.
 
@@ -157,6 +244,10 @@ Flujo usado para el despliegue en EC2:
 4. Abrir el puerto `8080` en el Security Group.
 5. Ejecutar `java -jar microspringboot-1.0-SNAPSHOT.jar`.
 6. Validar el acceso desde navegador o con `curl` sobre la IP publica.
+
+## Video
+
+[![Ver demo del despliegue](images/0.png)](images/demomicrospringboot.mp4)
 
 ## Evidencias
 

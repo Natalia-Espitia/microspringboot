@@ -8,6 +8,6 @@ RUN mvn package -DskipTests
 # Paso 2: Crear la imagen final con el jar construido
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
-COPY --from=builder /app/target/microspringboot-*.jar app.jar
+COPY --from=builder /app/target/microspringboot-1.0-SNAPSHOT.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
